@@ -36,20 +36,32 @@ CREATE TABLE stg_sales (
 );
 
 CREATE TABLE stg_meta (
-  row_num         NUMBER,
-  station_id      VARCHAR2(50),
-  station_name    VARCHAR2(400),
-  station_region  VARCHAR2(200),
-  station_mgr     VARCHAR2(100),
-  address_raw     VARCHAR2(2000),
-  description_raw CLOB,
-  author_country  VARCHAR2(50),
-  author_genre    VARCHAR2(100),
-  extra1          VARCHAR2(200),
-  extra2          VARCHAR2(200),
-  author_first    VARCHAR2(100),
-  author_last     VARCHAR2(100),
-  load_ts         TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  row_num                NUMBER,
+  station_id             VARCHAR2(50),
+  station_name           VARCHAR2(400),
+  station_region         VARCHAR2(200),
+  station_mgr            VARCHAR2(100),
+  address_raw            VARCHAR2(1000),
+  vendor_id              VARCHAR2(50),
+  vendor_name            VARCHAR2(200),
+  vendor_score           VARCHAR2(50),
+  vendor_services_0_type VARCHAR2(100),
+  vendor_services_0_qual NUMBER,
+  vendor_services_1_type VARCHAR2(100),
+  vendor_services_1_qual VARCHAR2(100),
+  publication_ed         VARCHAR2(100),
+  publication_title      VARCHAR2(200),
+  publication_cat        VARCHAR2(200),
+  publication_lang       VARCHAR2(100),
+  publication_author     VARCHAR2(200),
+  author_id              VARCHAR2(50),
+  author_first_name      VARCHAR2(100),
+  author_last_name       VARCHAR2(100),
+  author_country         VARCHAR2(100),
+  author_primary_genre   VARCHAR2(250),
+  field23                VARCHAR2(200),
+  field24                VARCHAR2(200),
+  load_ts                TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 COMMIT;

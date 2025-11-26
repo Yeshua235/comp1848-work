@@ -1,0 +1,44 @@
+﻿ID,Field1,Field2,Field3
+1,Source File,Column Name,Meaning / Data Type
+2,raw_daily.csv,DateID,Date of observation
+3,,StnCode,Station code
+4,,PD,Print run
+5,,BC,Binding cost
+6,,US,Units sold
+7,,RV,Returns
+8,,Rev,Revenue
+9,,Tmp,Temperature (C)
+10,,Hmd,Humidity (%)
+11,,VScr,Vendor score (0-10)
+12,,Typ,Product type (Hardcover/Paperback/e-Book)
+13,,Notes,optional
+14,,,
+15,raw_sales.csv,SaleNum,Transaction ID
+16,,DateStamp,Sale date
+17,,EdID,Edition ID (publication)
+18,,Chnl,Channel code (CH001-CH003)
+19,,TQty,Quantity sold
+20,,UPrice,Unit price
+21,,Curr,Currency code
+22,,Dscnt,Discount fraction (0-0.25)
+23,,PD,Same as in daily file
+24,,BC,Same as in daily file
+25,,VScr,Same as in daily file
+26,,Typ,Same as in daily file
+27,,,
+28,raw_meta,station.address,Full UK addr
+29,,station.postcode,Postcode
+30,,vendor.score,Vendor rating 0-10
+31,,publication.title,Title of the book/issue
+32,,author.first_name,Author first name
+33,,author.last_name,Author last name
+34,,,
+35,,,
+36,# Mapping of channel codes to names,,
+37,CH001=Amazon,,
+38,CH002=Barnes & Noble,,
+39,CH003=In_Store,,
+40,,,
+41,# Some notes about units,,
+42,UnitsSold: number of physical copies sold,,
+43,Quantity: same as UnitsSold but for digital sales,,

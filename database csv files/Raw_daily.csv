@@ -1,5 +1,5 @@
 ﻿ID,Field1,Field2,Field3,Field4,Field5,Field6,Field7,Field8,Field9,Field10,Field11,Field12
-1,DateID,StnCode,PD,BC,,RV,Rev,Tmp,Hmd,VScr,Typ,Notes
+1,DateID,StnCode,PD,BC,misc1,RV,Rev,Tmp,Hmd,VScr,Typ,Notes
 2,2023/01/24,DC003,1001,2837.65,985,59,16487.7,21.3,31,0.9,Hardcover,Note 1
 3,21-12-2023,DC003,1616,5056.92,1474,25,45972.01,15.1,40,7.0,Paperback,
 4,2024/02/03,DC001,698,2120.85,618,23,19246.11,25.9,64,1.2,Paperback,

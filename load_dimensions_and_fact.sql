@@ -142,4 +142,7 @@ VALUES (s.time_id, s.dc_id, s.product_id, s.channel_id, s.vendor_id,
   s.printrun, s.binding_cost, s.units_sold, s.unit_price, s.revenue, s.temperature, s.humidity, s.vendor_score, s.discount, s.returns_count, s.gross_margin_pct, s.load_ts);
 
   COMMIT;
+  DBMS_OUTPUT.PUT_LINE('Star load complete.');
 END;
+/
+-- End of load_star_from_staging.sql

@@ -164,12 +164,26 @@ USING (
     JOIN dim_time t ON t.dt = s.sale_dt
     LEFT JOIN dim_product pr ON pr.edid = s.edid
     LEFT JOIN dim_channel ch ON ch.channel_code = s.chnl
-    LEFT JOIN (SELECT DISTINCT vendor_score, vendor_id FROM stg_meta
-               UNION ALL
-               SELECT DISTINCT TO_CHAR(vscr), 'unknown' FROM stg_sales WHERE vscr NOT IN (SELECT vendor_score FROM stg_meta)
-               UNION ALL
-               SELECT DISTINCT TO_CHAR(vscr), 'unknown' FROM stg_daily WHERE vscr NOT IN (SELECT vendor_score FROM stg_meta)) ve_meta
-    ON ve_meta.vendor_score = TO_CHAR(s.vscr)
+    LEFT JOIN (SELECT DISTINCT
+          CASE WHEN REGEXP_LIKE(TRIM(vendor_score), '^-?[0-9]+(\\.[0-9]+)?$') THEN TO_NUMBER(vendor_score)
+          ELSE 5
+        END
+        AS vendor_score, vendor_id FROM stg_meta
+          UNION ALL
+            SELECT DISTINCT NVL(vscr, 0), 'unknown' FROM stg_sales WHERE NVL(vscr,0) NOT IN (SELECT CASE
+                    WHEN REGEXP_LIKE(TRIM(vendor_score), '^-?[0-9]+(\\.[0-9]+)?$') THEN TO_NUMBER(vendor_score)
+                  ELSE 5
+                END
+              FROM stg_meta)
+          UNION ALL
+            SELECT DISTINCT NVL(vscr, 0), 'unknown' FROM stg_daily WHERE NVL(vscr,0) NOT IN (
+              SELECT CASE
+                      WHEN REGEXP_LIKE(TRIM(vendor_score), '^-?[0-9]+(\\.[0-9]+)?$') THEN TO_NUMBER(vendor_score)
+                    ELSE 5
+                  END
+              FROM stg_meta) ) ve_meta
+          ON ve_meta.vendor_score = NVL(s.vscr, 0)
+
     LEFT JOIN dim_vendor ve ON ve.vendor_id = ve_meta.vendor_id
     WHERE s.sale_dt IS NOT NULL )
   GROUP BY time_id, dc_id, product_id, channel_id, vendor_id

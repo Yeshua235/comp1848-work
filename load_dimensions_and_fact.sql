@@ -2,7 +2,6 @@
 
 SET SERVEROUTPUT ON
 
--- variables declaration
 DECLARE
   v_time_id    NUMBER;
   v_dc_id      NUMBER;
@@ -15,7 +14,6 @@ DECLARE
   v_author_id  VARCHAR2(50);
 BEGIN
 
-  -- time from stg_daily and stg_sales
 
   FOR d IN (SELECT DISTINCT reading_dt dt FROM stg_daily WHERE reading_dt IS NOT NULL
   UNION
@@ -31,7 +29,6 @@ BEGIN
     END;
   END LOOP;
 
-  -- dc from stg_meta
 
   FOR r IN (SELECT DISTINCT station_id, station_name, station_region, station_mgr FROM stg_meta WHERE station_id IS NOT NULL) LOOP
     BEGIN
@@ -41,7 +38,6 @@ BEGIN
     END;
   END LOOP;
 
-  -- author from stg_meta
 
   FOR a IN (SELECT DISTINCT author_id, author_first_name, author_last_name, author_country, author_primary_genre FROM stg_meta WHERE author_id IS NOT NULL) LOOP
     BEGIN
@@ -51,7 +47,6 @@ BEGIN
     END;
   END LOOP;
 
-  -- channel
 
   FOR c IN (SELECT DISTINCT chnl FROM stg_sales WHERE chnl IS NOT NULL) LOOP
     BEGIN
@@ -60,8 +55,6 @@ BEGIN
       INSERT INTO dim_channel(channel_code, channel_name) VALUES (c.chnl, c.chnl) RETURNING channel_id INTO v_channel_id;
     END;
   END LOOP;
-
-  -- product from edid and stg_daily.typ
 
   FOR p IN (
     SELECT DISTINCT edid, NULL typ FROM stg_sales WHERE edid IS NOT NULL
@@ -93,8 +86,6 @@ BEGIN
     END;
   END LOOP;
 
-  -- vendor from stg_meta (uses vendor_id for uniqueness)
-
   FOR v IN (SELECT DISTINCT vendor_id, vendor_name, vendor_score FROM stg_meta WHERE vendor_id IS NOT NULL) LOOP
     BEGIN
         SELECT vendor_id INTO v_vendor_id FROM dim_vendor WHERE vendor_id = v.vendor_id;
@@ -106,9 +97,6 @@ BEGIN
   END LOOP;
 
 
-  -- Insert production facts from stg_daily
-
-  -- Before MERGE, it is necessary to ensure 'unknown' channel exists
 
 BEGIN
   SELECT channel_id INTO v_channel_id FROM dim_channel WHERE channel_code = 'unknown';
@@ -116,7 +104,6 @@ EXCEPTION WHEN NO_DATA_FOUND THEN
   INSERT INTO dim_channel(channel_code, channel_name) VALUES ('unknown', 'Unknown') RETURNING channel_id INTO v_channel_id;
 END;
 
--- It is necessary to also ensure 'unknown' vendor exists
 
 BEGIN
   SELECT vendor_id INTO v_vendor_id FROM dim_vendor WHERE vendor_id = 'unknown';
@@ -124,7 +111,6 @@ EXCEPTION WHEN NO_DATA_FOUND THEN
   INSERT INTO dim_vendor(vendor_id, vendor_name, vendor_score) VALUES ('unknown', 'Unknown Vendor', 5) RETURNING vendor_id INTO v_vendor_id;
 END;
 
--- MERGE for aggregation
 
 MERGE INTO fact_production_sales f
 USING (
@@ -171,10 +157,7 @@ USING (
   WHERE product_id IS NOT NULL AND channel_id IS NOT NULL
 ) s ON (f.time_id = s.time_id AND f.dc_id = s.dc_id AND f.product_id = s.product_id AND f.channel_id = s.channel_id AND f.vendor_id = s.vendor_id)
 WHEN MATCHED THEN UPDATE SET
-  f.printrun = s.printrun, f.binding_cost = s.binding_cost, f.units_sold = s.units_sold,  f.unit_price = s.unit_price,
-  f.revenue = s.revenue, f.temperature = s.temperature, f.humidity = s.humidity,
-  f.vendor_score = s.vendor_score, f.discount = s.discount, f.returns_count = s.returns_count,
-  f.gross_margin_pct = s.gross_margin_pct, f.load_ts = s.load_ts
+  f.printrun = s.printrun, f.binding_cost = s.binding_cost, f.units_sold = s.units_sold,  f.unit_price = s.unit_price, f.revenue = s.revenue, f.temperature = s.temperature, f.humidity = s.humidity, f.vendor_score = s.vendor_score, f.discount = s.discount, f.returns_count = s.returns_count, f.gross_margin_pct = s.gross_margin_pct, f.load_ts = s.load_ts
 WHEN NOT MATCHED THEN INSERT (time_id, dc_id, product_id, channel_id, vendor_id,
   printrun, binding_cost, units_sold, unit_price, revenue, temperature, humidity, vendor_score, discount, returns_count, gross_margin_pct, load_ts)
 VALUES (s.time_id, s.dc_id, s.product_id, s.channel_id, s.vendor_id,

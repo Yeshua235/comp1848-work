@@ -125,10 +125,10 @@ USING (
     LEFT JOIN dim_channel ch ON ch.channel_code = 'unknown'
     LEFT JOIN (SELECT DISTINCT vendor_score, vendor_id FROM stg_meta
                UNION ALL
-               SELECT DISTINCT vscr, 'unknown' FROM stg_sales WHERE vscr NOT IN (SELECT vendor_score FROM stg_meta)
+               SELECT DISTINCT TO_CHAR(vscr), 'unknown' FROM stg_sales WHERE vscr NOT IN (SELECT vendor_score FROM stg_meta)
                UNION ALL
-               SELECT DISTINCT vscr, 'unknown' FROM stg_daily WHERE vscr NOT IN (SELECT vendor_score FROM stg_meta)) ve_meta
-    ON ve_meta.vendor_score = r.vscr
+               SELECT DISTINCT TO_CHAR(vscr), 'unknown' FROM stg_daily WHERE vscr NOT IN (SELECT vendor_score FROM stg_meta)) ve_meta
+    ON ve_meta.vendor_score = TO_CHAR(r.vscr)
     LEFT JOIN dim_vendor ve ON ve.vendor_id = ve_meta.vendor_id
     WHERE r.reading_dt IS NOT NULL
     UNION ALL
@@ -142,10 +142,10 @@ USING (
     LEFT JOIN dim_channel ch ON ch.channel_code = s.chnl
     LEFT JOIN (SELECT DISTINCT vendor_score, vendor_id FROM stg_meta
                UNION ALL
-               SELECT DISTINCT vscr, 'unknown' FROM stg_sales WHERE vscr NOT IN (SELECT vendor_score FROM stg_meta)
+               SELECT DISTINCT TO_CHAR(vscr), 'unknown' FROM stg_sales WHERE vscr NOT IN (SELECT vendor_score FROM stg_meta)
                UNION ALL
-               SELECT DISTINCT vscr, 'unknown' FROM stg_daily WHERE vscr NOT IN (SELECT vendor_score FROM stg_meta)) ve_meta
-    ON ve_meta.vendor_score = s.vscr
+               SELECT DISTINCT TO_CHAR(vscr), 'unknown' FROM stg_daily WHERE vscr NOT IN (SELECT vendor_score FROM stg_meta)) ve_meta
+    ON ve_meta.vendor_score = TO_CHAR(s.vscr)
     LEFT JOIN dim_vendor ve ON ve.vendor_id = ve_meta.vendor_id
     WHERE s.sale_dt IS NOT NULL
   ) GROUP BY time_id, dc_id, product_id, channel_id, vendor_id

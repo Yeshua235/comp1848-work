@@ -77,6 +77,3 @@ CREATE TABLE fact_production_sales (
 );
 
 COMMIT;
-
--- temporary run and then re-create fact_production_table
-DROP TABLE fact_production_sales CASCADE CONSTRAINTS;

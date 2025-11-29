@@ -1,3 +1,9 @@
 run
 1. create star schema
 2. load dimensions and fact
+
+
+VALUES (d.dt, TO_NUMBER(TO_CHAR(d.dt,'DD')), TO_NUMBER(TO_CHAR(d.dt,'MM')), TO_NUMBER(TO_CHAR(d.dt,'YYYY')),
+              TO_NUMBER(TO_CHAR(d.dt,'Q')), CASE WHEN TO_CHAR(d.dt,'DY','NLS_DATE_LANGUAGE=ENGLISH') IN ('SAT','SUN') THEN 'Y' ELSE 'N' END)
+      RETURNING time_id INTO v_time_id;
+    END;

@@ -23,10 +23,10 @@ BEGIN
       SELECT time_id INTO v_time_id FROM dim_time WHERE dt = d.dt;
     EXCEPTION WHEN NO_DATA_FOUND THEN
       INSERT INTO dim_time(dt, day_no, month_no, year_no, quarter_no, is_weekend)
-      VALUES (d.dt, TO_NUMBER(TO_CHAR(d.dt,'DD')), TO_NUMBER(TO_CHAR(d.dt,'MM')), TO_NUMBER(TO_CHAR(d.dt,'YYYY')),
-              TO_NUMBER(TO_CHAR(d.dt,'Q')), CASE WHEN TO_CHAR(d.dt,'DY','NLS_DATE_LANGUAGE=ENGLISH') IN ('SAT','SUN') THEN 'Y' ELSE 'N' END)
-      RETURNING time_id INTO v_time_id;
-    END;
+      VALUES (d.dt, EXTRACT(DAY FROM d.dt), EXTRACT(MONTH FROM d.dt), EXTRACT(YEAR FROM d.dt),
+            TO_NUMBER(TO_CHAR(d.dt,'Q')), CASE WHEN TO_CHAR(d.dt,'DY','NLS_DATE_LANGUAGE=ENGLISH') IN ('SAT','SUN') THEN 'Y' ELSE 'N' END)
+    RETURNING time_id INTO v_time_id;
+  END;
   END LOOP;
 
 

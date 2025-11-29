@@ -104,18 +104,23 @@ BEGIN
   END LOOP;
 
 
-
 BEGIN
   SELECT channel_id INTO v_channel_id FROM dim_channel WHERE channel_code = 'unknown';
 EXCEPTION WHEN NO_DATA_FOUND THEN
   INSERT INTO dim_channel(channel_code, channel_name) VALUES ('unknown', 'Unknown') RETURNING channel_id INTO v_channel_id;
 END;
 
-
 BEGIN
   SELECT vendor_id INTO v_vendor_id FROM dim_vendor WHERE vendor_id = 'unknown';
 EXCEPTION WHEN NO_DATA_FOUND THEN
   INSERT INTO dim_vendor(vendor_id, vendor_name, vendor_score) VALUES ('unknown', 'Unknown Vendor', 5) RETURNING vendor_id INTO v_vendor_id;
+END;
+
+BEGIN
+  INSERT INTO dim_dc (dc_id, name, region, mgr)
+  VALUES ('unknown', 'Unknown DC', 'Unknown', 'Unknown');
+EXCEPTION
+  WHEN DUP_VAL_ON_INDEX THEN NULL;
 END;
 
 
@@ -157,7 +162,7 @@ USING (
     WHERE r.reading_dt IS NOT NULL
     UNION ALL
 
-    SELECT t.time_id, NULL dc_id, pr.product_id, ch.channel_id, ve.vendor_id,
+    SELECT t.time_id, 'unknown' dc_id, pr.product_id, ch.channel_id, ve.vendor_id,
       s.pd printrun, s.bc binding_cost, s.tqty units_sold, s.uprice unit_price, (s.tqty * s.uprice) revenue, NULL temperature, NULL humidity,
       s.vscr vendor_score, s.dscnt discount, NULL returns_count, ((s.tqty * s.uprice - NVL(s.bc,0)) / NULLIF(s.tqty * s.uprice,0) * 100) gross_margin_pct
     FROM stg_sales s
@@ -187,7 +192,7 @@ USING (
     LEFT JOIN dim_vendor ve ON ve.vendor_id = ve_meta.vendor_id
     WHERE s.sale_dt IS NOT NULL )
   GROUP BY time_id, dc_id, product_id, channel_id, vendor_id
-  HAVING product_id IS NOT NULL AND channel_id IS NOT NULL
+  HAVING product_id IS NOT NULL AND channel_id IS NOT NULL AND dc_id IS NOT NULL
 ) s ON (f.time_id = s.time_id AND f.dc_id = s.dc_id AND f.product_id = s.product_id AND f.channel_id = s.channel_id AND f.vendor_id = s.vendor_id)
 WHEN MATCHED THEN UPDATE SET
   f.printrun = s.printrun, f.binding_cost = s.binding_cost, f.units_sold = s.units_sold,  f.unit_price = s.unit_price, f.revenue = s.revenue, f.temperature = s.temperature, f.humidity = s.humidity, f.vendor_score = s.vendor_score, f.discount = s.discount, f.returns_count = s.returns_count, f.gross_margin_pct = s.gross_margin_pct, f.load_ts = s.load_ts

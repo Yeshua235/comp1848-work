@@ -60,7 +60,7 @@ CREATE TABLE fact_production_sales (
   dc_id            VARCHAR2(50) REFERENCES dim_dc(dc_id) NOT NULL,
   product_id       NUMBER REFERENCES dim_product(product_id) NOT NULL,
   channel_id       NUMBER REFERENCES dim_channel(channel_id) NOT NULL,
-  vendor_id        NUMBER REFERENCES dim_vendor(vendor_id),
+  vendor_id        VARCHAR2(50) REFERENCES dim_vendor(vendor_id),
   printrun         NUMBER,
   binding_cost     NUMBER,
   units_sold       NUMBER,

@@ -68,14 +68,18 @@ BEGIN
     EXCEPTION WHEN NO_DATA_FOUND THEN
         -- Fetch only if edid exists
         IF p.edid IS NOT NULL THEN
-        SELECT NVL(publication_title, NULL), NVL(publication_cat, NULL), NVL(publication_lang, NULL), NVL(author_id, NULL)
-        INTO v_title, v_category, v_language, v_author_id
-        FROM stg_meta WHERE publication_ed = p.edid;
-        ELSE
+         BEGIN
+          SELECT NVL(publication_title, NULL), NVL(publication_cat, NULL), NVL(publication_lang, NULL), NVL(author_id, NULL)
+          INTO v_title, v_category, v_language, v_author_id
+          FROM stg_meta WHERE publication_ed = p.edid;
+        EXCEPTION WHEN NO_DATA_FOUND THEN
+          v_title := NULL; v_category := NULL; v_language := NULL; v_author_id := NULL;  -- Default if no meta
+        END;
+      ELSE
         v_title := NULL; v_category := NULL; v_language := NULL; v_author_id := NULL;
-        END IF;
-        INSERT INTO dim_product(edid, typ, title, category, language, author_id)
-        VALUES (p.edid, p.typ, v_title, v_category, v_language, v_author_id) RETURNING product_id INTO v_product_id;
+      END IF;
+      INSERT INTO dim_product(edid, typ, title, category, language, author_id)
+      VALUES (p.edid, p.typ, v_title, v_category, v_language, v_author_id) RETURNING product_id INTO v_product_id;
     END;
   END LOOP;
 
@@ -85,7 +89,7 @@ BEGIN
         SELECT vendor_id INTO v_vendor_id FROM dim_vendor WHERE vendor_id = v.vendor_id;  -- Use vendor_id for lookup
     EXCEPTION WHEN NO_DATA_FOUND THEN
         INSERT INTO dim_vendor(vendor_id, vendor_name, vendor_score)
-        VALUES (v.vendor_id, v.vendor_name, TO_NUMBER(v.vendor_score)) RETURNING vendor_id INTO v_vendor_id;
+        VALUES (v.vendor_id, v.vendor_name, NVL(TO_NUMBER(v.vendor_score), 0)) RETURNING vendor_id INTO v_vendor_id;
     END;
   END LOOP;
 

@@ -12,7 +12,7 @@ DECLARE
   v_title      VARCHAR2(200);
   v_category   VARCHAR2(200);
   v_language   VARCHAR2(100);
-  v_author_id  NUMBER;
+  v_author_id  VARCHAR2(50);
 BEGIN
 
   -- time from stg_daily and stg_sales

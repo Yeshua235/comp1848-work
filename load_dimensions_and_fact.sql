@@ -4,10 +4,10 @@ SET SERVEROUTPUT ON
 
 DECLARE
   v_time_id    NUMBER;
-  v_dc_id      NUMBER;
+  v_dc_id      VARCHAR2(50);
   v_product_id NUMBER;
   v_channel_id NUMBER;
-  v_vendor_id  NUMBER;
+  v_vendor_id  VARCHAR2(50);
   v_title      VARCHAR2(200);
   v_category   VARCHAR2(200);
   v_language   VARCHAR2(100);

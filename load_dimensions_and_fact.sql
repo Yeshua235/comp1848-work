@@ -86,10 +86,14 @@ BEGIN
   -- vendor from stg_meta (uses vendor_id for uniqueness)
   FOR v IN (SELECT DISTINCT vendor_id, vendor_name, vendor_score FROM stg_meta WHERE vendor_id IS NOT NULL) LOOP
     BEGIN
-        SELECT vendor_id INTO v_vendor_id FROM dim_vendor WHERE vendor_id = v.vendor_id;  -- Use vendor_id for lookup
-    EXCEPTION WHEN NO_DATA_FOUND THEN
-        INSERT INTO dim_vendor(vendor_id, vendor_name, vendor_score)
-        VALUES (v.vendor_id, v.vendor_name, NVL(TO_NUMBER(v.vendor_score), 0)) RETURNING vendor_id INTO v_vendor_id;
+        SELECT vendor_id INTO v_vendor_id FROM dim_vendor WHERE vendor_id = v.vendor_id;
+  EXCEPTION WHEN NO_DATA_FOUND THEN
+      INSERT INTO dim_vendor(vendor_id, vendor_name, vendor_score)
+      VALUES (v.vendor_id, v.vendor_name,
+              CASE WHEN v.vendor_score IS NOT NULL AND REGEXP_LIKE(v.vendor_score, '^[0-9.]+$')
+                   THEN TO_NUMBER(v.vendor_score)
+                   ELSE 0 END)
+      RETURNING vendor_id INTO v_vendor_id;
     END;
   END LOOP;
 

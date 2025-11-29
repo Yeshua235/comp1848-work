@@ -16,6 +16,7 @@ DECLARE
 BEGIN
 
   -- time from stg_daily and stg_sales
+
   FOR d IN (SELECT DISTINCT reading_dt dt FROM stg_daily WHERE reading_dt IS NOT NULL
   UNION
   SELECT DISTINCT sale_dt dt FROM stg_sales WHERE sale_dt IS NOT NULL
@@ -31,6 +32,7 @@ BEGIN
   END LOOP;
 
   -- dc from stg_meta
+
   FOR r IN (SELECT DISTINCT station_id, station_name, station_region, station_mgr FROM stg_meta WHERE station_id IS NOT NULL) LOOP
     BEGIN
       SELECT dc_id INTO v_dc_id FROM dim_dc WHERE dc_id = r.station_id;
@@ -40,6 +42,7 @@ BEGIN
   END LOOP;
 
   -- author from stg_meta
+
   FOR a IN (SELECT DISTINCT author_id, author_first_name, author_last_name, author_country, author_primary_genre FROM stg_meta WHERE author_id IS NOT NULL) LOOP
     BEGIN
         SELECT author_id INTO v_author_id FROM dim_author WHERE author_id = a.author_id;
@@ -49,6 +52,7 @@ BEGIN
   END LOOP;
 
   -- channel
+
   FOR c IN (SELECT DISTINCT chnl FROM stg_sales WHERE chnl IS NOT NULL) LOOP
     BEGIN
       SELECT channel_id INTO v_channel_id FROM dim_channel WHERE channel_code = c.chnl;
@@ -58,6 +62,7 @@ BEGIN
   END LOOP;
 
   -- product from edid and stg_daily.typ
+
   FOR p IN (
     SELECT DISTINCT edid, NULL typ FROM stg_sales WHERE edid IS NOT NULL
     UNION
@@ -66,17 +71,22 @@ BEGIN
     BEGIN
         SELECT product_id INTO v_product_id FROM dim_product WHERE (edid = p.edid OR typ = p.typ) AND ROWNUM = 1;
     EXCEPTION WHEN NO_DATA_FOUND THEN
-        -- Fetch only if edid exists
         IF p.edid IS NOT NULL THEN
          BEGIN
           SELECT NVL(publication_title, NULL), NVL(publication_cat, NULL), NVL(publication_lang, NULL), NVL(author_id, NULL)
           INTO v_title, v_category, v_language, v_author_id
           FROM stg_meta WHERE publication_ed = p.edid;
         EXCEPTION WHEN NO_DATA_FOUND THEN
-          v_title := NULL; v_category := NULL; v_language := NULL; v_author_id := NULL;  -- Default if no meta
+          v_title := NULL;
+          v_category := NULL;
+          v_language := NULL;
+          v_author_id := NULL;
         END;
       ELSE
-        v_title := NULL; v_category := NULL; v_language := NULL; v_author_id := NULL;
+        v_title := NULL;
+        v_category := NULL;
+        v_language := NULL;
+        v_author_id := NULL;
       END IF;
       INSERT INTO dim_product(edid, typ, title, category, language, author_id)
       VALUES (p.edid, p.typ, v_title, v_category, v_language, v_author_id) RETURNING product_id INTO v_product_id;
@@ -84,6 +94,7 @@ BEGIN
   END LOOP;
 
   -- vendor from stg_meta (uses vendor_id for uniqueness)
+
   FOR v IN (SELECT DISTINCT vendor_id, vendor_name, vendor_score FROM stg_meta WHERE vendor_id IS NOT NULL) LOOP
     BEGIN
         SELECT vendor_id INTO v_vendor_id FROM dim_vendor WHERE vendor_id = v.vendor_id;
@@ -98,6 +109,7 @@ BEGIN
   -- Insert production facts from stg_daily
 
   -- Before MERGE, it is necessary to ensure 'unknown' channel exists
+
 BEGIN
   SELECT channel_id INTO v_channel_id FROM dim_channel WHERE channel_code = 'unknown';
 EXCEPTION WHEN NO_DATA_FOUND THEN
@@ -105,6 +117,7 @@ EXCEPTION WHEN NO_DATA_FOUND THEN
 END;
 
 -- It is necessary to also ensure 'unknown' vendor exists
+
 BEGIN
   SELECT vendor_id INTO v_vendor_id FROM dim_vendor WHERE vendor_id = 'unknown';
 EXCEPTION WHEN NO_DATA_FOUND THEN
@@ -112,6 +125,7 @@ EXCEPTION WHEN NO_DATA_FOUND THEN
 END;
 
 -- MERGE for aggregation
+
 MERGE INTO fact_production_sales f
 USING (
   SELECT time_id, dc_id, product_id, channel_id, vendor_id,
@@ -120,7 +134,6 @@ USING (
     AVG(vendor_score) vendor_score, AVG(discount) discount, SUM(returns_count) returns_count,
     AVG(gross_margin_pct) gross_margin_pct, CURRENT_TIMESTAMP load_ts
   FROM (
-
 
     SELECT t.time_id, r.stncode dc_id, pr.product_id, ch.channel_id, ve.vendor_id,
       r.pd printrun, r.bc binding_cost, r.rv units_sold, NULL unit_price, r.rev revenue, r.tmp temperature, r.hmd humidity,
@@ -139,7 +152,6 @@ USING (
     WHERE r.reading_dt IS NOT NULL
     UNION ALL
 
-
     SELECT t.time_id, NULL dc_id, pr.product_id, ch.channel_id, ve.vendor_id,
       s.pd printrun, s.bc binding_cost, s.tqty units_sold, s.uprice unit_price, (s.tqty * s.uprice) revenue, NULL temperature, NULL humidity,
       s.vscr vendor_score, s.dscnt discount, NULL returns_count, ((s.tqty * s.uprice - NVL(s.bc,0)) / NULLIF(s.tqty * s.uprice,0) * 100) gross_margin_pct
@@ -154,8 +166,8 @@ USING (
                SELECT DISTINCT TO_CHAR(vscr), 'unknown' FROM stg_daily WHERE vscr NOT IN (SELECT vendor_score FROM stg_meta)) ve_meta
     ON ve_meta.vendor_score = TO_CHAR(s.vscr)
     LEFT JOIN dim_vendor ve ON ve.vendor_id = ve_meta.vendor_id
-    WHERE s.sale_dt IS NOT NULL
-  ) GROUP BY time_id, dc_id, product_id, channel_id, vendor_id
+    WHERE s.sale_dt IS NOT NULL )
+  GROUP BY time_id, dc_id, product_id, channel_id, vendor_id
   WHERE product_id IS NOT NULL AND channel_id IS NOT NULL
 ) s ON (f.time_id = s.time_id AND f.dc_id = s.dc_id AND f.product_id = s.product_id AND f.channel_id = s.channel_id AND f.vendor_id = s.vendor_id)
 WHEN MATCHED THEN UPDATE SET

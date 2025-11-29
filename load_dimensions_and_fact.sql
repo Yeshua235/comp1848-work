@@ -91,7 +91,14 @@ BEGIN
         SELECT vendor_id INTO v_vendor_id FROM dim_vendor WHERE vendor_id = v.vendor_id;
   EXCEPTION WHEN NO_DATA_FOUND THEN
       INSERT INTO dim_vendor(vendor_id, vendor_name, vendor_score)
-      VALUES (v.vendor_id, v.vendor_name, 5)
+      VALUES (
+        v.vendor_id,
+        v.vendor_name,
+        CASE
+          WHEN v.vendor_score IS NULL OR NOT REGEXP_LIKE(TRIM(v.vendor_score), '^-?\d+(\.\d+)?$') THEN 5
+        ELSE TO_NUMBER(TRIM(v.vendor_score))
+        END
+      )
       RETURNING vendor_id INTO v_vendor_id;
     END;
   END LOOP;

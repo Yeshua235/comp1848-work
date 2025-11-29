@@ -89,7 +89,7 @@ BEGIN
         SELECT vendor_id INTO v_vendor_id FROM dim_vendor WHERE vendor_id = v.vendor_id;
   EXCEPTION WHEN NO_DATA_FOUND THEN
       INSERT INTO dim_vendor(vendor_id, vendor_name, vendor_score)
-      VALUES (v.vendor_id, v.vendor_name, 5) -- mean value is used for handling exception cases
+      VALUES (v.vendor_id, v.vendor_name, 5)
       RETURNING vendor_id INTO v_vendor_id;
     END;
   END LOOP;
@@ -120,7 +120,8 @@ USING (
     AVG(vendor_score) vendor_score, AVG(discount) discount, SUM(returns_count) returns_count,
     AVG(gross_margin_pct) gross_margin_pct, CURRENT_TIMESTAMP load_ts
   FROM (
-    -- Daily facts
+
+
     SELECT t.time_id, r.stncode dc_id, pr.product_id, ch.channel_id, ve.vendor_id,
       r.pd printrun, r.bc binding_cost, r.rv units_sold, NULL unit_price, r.rev revenue, r.tmp temperature, r.hmd humidity,
       r.vscr vendor_score, NULL discount, r.rv returns_count, NULL gross_margin_pct
@@ -137,7 +138,8 @@ USING (
     LEFT JOIN dim_vendor ve ON ve.vendor_id = ve_meta.vendor_id
     WHERE r.reading_dt IS NOT NULL
     UNION ALL
-    -- Sales facts
+
+
     SELECT t.time_id, NULL dc_id, pr.product_id, ch.channel_id, ve.vendor_id,
       s.pd printrun, s.bc binding_cost, s.tqty units_sold, s.uprice unit_price, (s.tqty * s.uprice) revenue, NULL temperature, NULL humidity,
       s.vscr vendor_score, s.dscnt discount, NULL returns_count, ((s.tqty * s.uprice - NVL(s.bc,0)) / NULLIF(s.tqty * s.uprice,0) * 100) gross_margin_pct

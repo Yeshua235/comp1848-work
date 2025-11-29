@@ -99,6 +99,13 @@ EXCEPTION WHEN NO_DATA_FOUND THEN
   INSERT INTO dim_channel(channel_code, channel_name) VALUES ('unknown', 'Unknown') RETURNING channel_id INTO v_channel_id;
 END;
 
+-- It is necessary to also ensure 'unknown' vendor exists
+BEGIN
+  SELECT vendor_id INTO v_vendor_id FROM dim_vendor WHERE vendor_id = 'unknown';
+EXCEPTION WHEN NO_DATA_FOUND THEN
+  INSERT INTO dim_vendor(vendor_id, vendor_name, vendor_score) VALUES ('unknown', 'Unknown Vendor', 0) RETURNING vendor_id INTO v_vendor_id;
+END;
+
 -- MERGE for aggregation
 MERGE INTO fact_production_sales f
 USING (
@@ -116,7 +123,13 @@ USING (
     JOIN dim_time t ON t.dt = r.reading_dt
     LEFT JOIN dim_product pr ON pr.typ = r.typ
     LEFT JOIN dim_channel ch ON ch.channel_code = 'unknown'
-    LEFT JOIN dim_vendor ve ON ve.vendor_id = (SELECT vendor_id FROM stg_meta WHERE vendor_score = r.vscr AND ROWNUM = 1)
+    LEFT JOIN (SELECT DISTINCT vendor_score, vendor_id FROM stg_meta
+               UNION ALL
+               SELECT DISTINCT vscr, 'unknown' FROM stg_sales WHERE vscr NOT IN (SELECT vendor_score FROM stg_meta)
+               UNION ALL
+               SELECT DISTINCT vscr, 'unknown' FROM stg_daily WHERE vscr NOT IN (SELECT vendor_score FROM stg_meta)) ve_meta
+    ON ve_meta.vendor_score = r.vscr
+    LEFT JOIN dim_vendor ve ON ve.vendor_id = ve_meta.vendor_id
     WHERE r.reading_dt IS NOT NULL
     UNION ALL
     -- Sales facts
@@ -127,10 +140,16 @@ USING (
     JOIN dim_time t ON t.dt = s.sale_dt
     LEFT JOIN dim_product pr ON pr.edid = s.edid
     LEFT JOIN dim_channel ch ON ch.channel_code = s.chnl
-    LEFT JOIN dim_vendor ve ON ve.vendor_id = (SELECT vendor_id FROM stg_meta WHERE vendor_score = s.vscr AND ROWNUM = 1)
+    LEFT JOIN (SELECT DISTINCT vendor_score, vendor_id FROM stg_meta
+               UNION ALL
+               SELECT DISTINCT vscr, 'unknown' FROM stg_sales WHERE vscr NOT IN (SELECT vendor_score FROM stg_meta)
+               UNION ALL
+               SELECT DISTINCT vscr, 'unknown' FROM stg_daily WHERE vscr NOT IN (SELECT vendor_score FROM stg_meta)) ve_meta
+    ON ve_meta.vendor_score = s.vscr
+    LEFT JOIN dim_vendor ve ON ve.vendor_id = ve_meta.vendor_id
     WHERE s.sale_dt IS NOT NULL
   ) GROUP BY time_id, dc_id, product_id, channel_id, vendor_id
-) s ON (f.time_id = s.time_id AND f.dc_id = s.dc_id AND f.product_id = s.product_id AND f.channel_id = s.channel_id)
+) s ON (f.time_id = s.time_id AND f.dc_id = s.dc_id AND f.product_id = s.product_id AND f.channel_id = s.channel_id AND f.vendor_id = s.vendor_id)
 WHEN MATCHED THEN UPDATE SET
   f.printrun = s.printrun, f.binding_cost = s.binding_cost, f.units_sold = s.units_sold,  f.unit_price = s.unit_price,
   f.revenue = s.revenue, f.temperature = s.temperature, f.humidity = s.humidity,

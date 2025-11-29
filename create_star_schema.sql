@@ -73,7 +73,10 @@ CREATE TABLE fact_production_sales (
   vendor_score     NUMBER,
   gross_margin_pct NUMBER,
   load_ts          TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT uq_fact_daily_grain UNIQUE (time_id, dc_id, product_id, channel_id)
+  CONSTRAINT uq_fact_daily_grain UNIQUE (time_id, dc_id, product_id, channel_id, vendor_id)
 );
 
 COMMIT;
+
+-- temporary run and then re-create fact_production_table
+DROP TABLE fact_production_sales CASCADE CONSTRAINTS;

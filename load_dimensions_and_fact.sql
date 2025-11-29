@@ -154,7 +154,7 @@ USING (
     LEFT JOIN dim_vendor ve ON ve.vendor_id = ve_meta.vendor_id
     WHERE s.sale_dt IS NOT NULL )
   GROUP BY time_id, dc_id, product_id, channel_id, vendor_id
-  WHERE product_id IS NOT NULL AND channel_id IS NOT NULL
+  HAVING product_id IS NOT NULL AND channel_id IS NOT NULL
 ) s ON (f.time_id = s.time_id AND f.dc_id = s.dc_id AND f.product_id = s.product_id AND f.channel_id = s.channel_id AND f.vendor_id = s.vendor_id)
 WHEN MATCHED THEN UPDATE SET
   f.printrun = s.printrun, f.binding_cost = s.binding_cost, f.units_sold = s.units_sold,  f.unit_price = s.unit_price, f.revenue = s.revenue, f.temperature = s.temperature, f.humidity = s.humidity, f.vendor_score = s.vendor_score, f.discount = s.discount, f.returns_count = s.returns_count, f.gross_margin_pct = s.gross_margin_pct, f.load_ts = s.load_ts
